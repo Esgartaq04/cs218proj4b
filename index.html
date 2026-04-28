@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WikiVerify — citation verification for Wikipedia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     WikiVerify — design tokens
+     ========================================================= */
+  :root {
+    --bg:            #F7F5F0;
+    --bg-elev:       #FFFFFF;
+    --bg-soft:       #F1EEE6;
+    --border:        #E5E1D6;
+    --border-strong: #D6D1C2;
+    --ink:           #1A1A1A;
+    --ink-2:         #4A4A48;
+    --ink-3:         #7A7771;
+    --ink-4:         #A8A49A;
+    --link:          #2A55B5;
+
+    --supports-bg:   #E6EFE5;
+    --supports-fg:   #2E6B36;
+    --supports-bar:  #4F9B5C;
+
+    --partial-bg:    #FAEED9;
+    --partial-fg:    #8E5A1F;
+    --partial-bar:   #C58A2E;
+
+    --notsup-bg:     #F8E2DC;
+    --notsup-fg:     #A03422;
+    --notsup-bar:    #C9412C;
+
+    --unver-bg:      #F0EBD9;
+    --unver-fg:      #7A5F2A;
+    --unver-bar:     #C2B07A;
+
+    --shadow-sm: 0 1px 2px rgba(20, 18, 12, 0.04);
+    --shadow-md: 0 1px 3px rgba(20, 18, 12, 0.06), 0 4px 14px rgba(20, 18, 12, 0.04);
+
+    --radius:    14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 12% 0%,  rgba(197, 138, 46, 0.06) 0%, transparent 35%),
+      radial-gradient(circle at 88% 8%,  rgba(79, 155, 92, 0.05)  0%, transparent 40%);
+    min-height: 100vh;
+  }
+
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ---------------- Top header ---------------- */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .brand-mark {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .brand-mark .dot {
+    color: var(--supports-bar);
+  }
+  .tagline {
+    font-size: 13px;
+    color: var(--ink-3);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+  }
+
+  /* ---------------- Verification panel ---------------- */
+  .panel {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #FBF9F4 0%, #FFFFFF 100%);
+  }
+  .panel-head .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .panel-head .label {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .panel-head .url-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink-2);
+    font-family: 'Geist', sans-serif;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+  .panel-head .url-input::placeholder { color: var(--ink-4); }
+  .panel-head .url-input:hover  { background: var(--bg-soft); }
+  .panel-head .url-input:focus  { background: var(--bg-soft); }
+
+  .btn {
+    font-family: 'Geist', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--bg-elev);
+    border: 1px solid var(--border-strong);
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover     { background: var(--bg-soft); border-color: var(--ink-3); }
+  .btn:active    { transform: translateY(1px); }
+  .btn:disabled  { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { background: #000; border-color: #000; }
+
+  /* ---------------- Stat strip ---------------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+  .stat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .stat.checked  .stat-value { color: var(--ink); }
+  .stat.support  .stat-value { color: var(--supports-fg); }
+  .stat.review   .stat-value { color: var(--partial-fg); }
+  .stat.notsup   .stat-value { color: var(--notsup-fg); }
+
+  /* ---------------- Empty / loading / error ---------------- */
+  .panel-body { padding: 0; }
+
+  .state {
+    padding: 56px 24px;
+    text-align: center;
+    color: var(--ink-3);
+  }
+  .state h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .state p {
+    margin: 0 auto;
+    max-width: 420px;
+    font-size: 14px;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2.5px solid var(--border-strong);
+    border-top-color: var(--ink);
+    margin: 0 auto 18px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .state.error h3 { color: var(--notsup-fg); }
+  .state.error    { background: #FBF6F4; }
+
+  /* ---------------- Claim cards ---------------- */
+  .claims {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  .claim {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    padding: 18px 20px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .claim:nth-child(1) { animation-delay: 0.02s; }
+  .claim:nth-child(2) { animation-delay: 0.06s; }
+  .claim:nth-child(3) { animation-delay: 0.10s; }
+  .claim:nth-child(4) { animation-delay: 0.14s; }
+  .claim:nth-child(5) { animation-delay: 0.18s; }
+  .claim:nth-child(n+6) { animation-delay: 0.22s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .claim-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 11px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    margin-top: 1px;
+  }
+  .badge.supports     { background: var(--supports-bg); color: var(--supports-fg); }
+  .badge.partial      { background: var(--partial-bg);  color: var(--partial-fg); }
+  .badge.notsupported { background: var(--notsup-bg);   color: var(--notsup-fg); }
+  .badge.unverifiable { background: var(--unver-bg);    color: var(--unver-fg); }
+
+  .claim-text {
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.5;
+    flex: 1;
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+  }
+
+  .confidence {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .confidence-label {
+    font-size: 12px;
+    color: var(--ink-3);
+    width: 70px;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1;
+    height: 5px;
+    background: var(--bg-soft);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    transition: width 0.6s cubic-bezier(.2,.8,.2,1);
+  }
+  .bar-fill.supports     { background: var(--supports-bar); }
+  .bar-fill.partial      { background: var(--partial-bar); }
+  .bar-fill.notsupported { background: var(--notsup-bar); }
+  .bar-fill.unverifiable { background: var(--unver-bar); }
+  .confidence-value {
+    font-size: 12px;
+    color: var(--ink-3);
+    width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rationale {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .source-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .source-link {
+    color: var(--link);
+    text-decoration: none;
+    font-size: 13px;
+    word-break: break-all;
+    flex: 1;
+    min-width: 0;
+  }
+  .source-link:hover { text-decoration: underline; }
+  .trust-pill {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  .trust-pill.high   { background: var(--supports-bg); color: var(--supports-fg); }
+  .trust-pill.medium { background: var(--partial-bg);  color: var(--partial-fg); }
+  .trust-pill.low    { background: var(--notsup-bg);   color: var(--notsup-fg); }
+  .trust-pill.unknown{ background: var(--unver-bg);    color: var(--unver-fg); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .actions .btn {
+    padding: 7px 14px;
+    font-size: 12.5px;
+  }
+  .actions .btn.approved {
+    background: var(--supports-bg);
+    border-color: var(--supports-bar);
+    color: var(--supports-fg);
+  }
+  .actions .btn.flagged {
+    background: var(--partial-bg);
+    border-color: var(--partial-bar);
+    color: var(--partial-fg);
+  }
+
+  /* ---------------- Settings & footer ---------------- */
+  .config {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-4);
+  }
+  .config a {
+    color: var(--ink-3);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+  }
+  .config a:hover { color: var(--ink); }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 18, 12, 0.35);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--bg-elev);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    margin: 0 0 6px;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .modal p {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .modal label {
+    font-size: 12px;
+    color: var(--ink-2);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: 'Geist', sans-serif;
+    font-size: 13px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+    margin-bottom: 16px;
+  }
+  .modal input:focus { border-color: var(--ink-3); }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* ---------------- Responsive ---------------- */
+  @media (max-width: 640px) {
+    .page { padding: 24px 14px 60px; }
+    .panel-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: none; }
+    .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--border); }
+    .claim-head { flex-direction: column; gap: 10px; }
+    .stat-value { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============== Header ============== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">WikiVerify<span class="dot">.</span></span>
+    </div>
+    <span class="tagline">trust, but cite</span>
+  </header>
+
+  <!-- ============== Main panel ============== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="left">
+        <span class="label">WikiVerify</span>
+        <input
+          id="urlInput"
+          class="url-input"
+          type="text"
+          placeholder="en.wikipedia.org/wiki/CRISPR  —  or paste a Wikipedia URL"
+          spellcheck="false"
+          autocomplete="off"
+        />
+      </div>
+      <button id="runBtn" class="btn btn-primary">Run verification</button>
+    </div>
+
+    <div class="stats" id="statsRow">
+      <div class="stat checked"><div class="stat-label">Claims checked</div><div class="stat-value" id="statTotal">—</div></div>
+      <div class="stat support"><div class="stat-label">Fully supported</div><div class="stat-value" id="statSupported">—</div></div>
+      <div class="stat review"> <div class="stat-label">Needs review</div>   <div class="stat-value" id="statPartial">—</div></div>
+      <div class="stat notsup"> <div class="stat-label">Not supported</div>  <div class="stat-value" id="statNotSupported">—</div></div>
+    </div>
+
+    <div class="panel-body" id="panelBody">
+      <div class="state" id="emptyState">
+        <h3>Ready when you are.</h3>
+        <p>Paste a Wikipedia article URL or title above, then run verification. Each cited claim will be fetched, checked against its source, and rated.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="config">
+    <a id="configLink">configure webhook endpoint</a>
+  </div>
+</div>
+
+<!-- ============== Settings modal ============== -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>n8n webhook URL</h3>
+    <p>Paste the production URL from your <em>Frontend Webhook</em> node. Saved locally in your browser only.</p>
+    <label for="webhookField">Endpoint</label>
+    <input id="webhookField" type="text" placeholder="https://your-n8n-instance.example/webhook/verify-article" />
+    <div class="modal-actions">
+      <button class="btn" id="cancelCfg">Cancel</button>
+      <button class="btn btn-primary" id="saveCfg">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   WikiVerify frontend
+   - Calls the n8n /webhook/verify-article endpoint
+   - Renders the structured report from the Build Report node
+   ========================================================= */
+
+const STORAGE_KEY = 'wikiverify.webhookUrl';
+
+// ============== Config ==============
+// Edit this default if you want to ship the URL with the code.
+// Otherwise users set it via the "configure webhook endpoint" link.
+const DEFAULT_WEBHOOK_URL = '';
+
+function getWebhookUrl() {
+  return localStorage.getItem(STORAGE_KEY) || DEFAULT_WEBHOOK_URL;
+}
+function setWebhookUrl(url) {
+  localStorage.setItem(STORAGE_KEY, url);
+}
+
+// ============== Element refs ==============
+const $ = (id) => document.getElementById(id);
+const urlInput   = $('urlInput');
+const runBtn     = $('runBtn');
+const panelBody  = $('panelBody');
+const statTotal  = $('statTotal');
+const statSup    = $('statSupported');
+const statPart   = $('statPartial');
+const statNot    = $('statNotSupported');
+
+// ============== Helpers ==============
+
+// Accept either a full Wikipedia URL or a bare title and return the title slug.
+function parseTitle(input) {
+  const v = (input || '').trim();
+  if (!v) return null;
+
+  // Strip protocol+host if present
+  const m = v.match(/wikipedia\.org\/wiki\/([^?#]+)/i);
+  if (m) return decodeURIComponent(m[1]).replace(/_/g, ' ');
+
+  // Otherwise treat the whole thing as a title (allow underscores → spaces)
+  return v.replace(/_/g, ' ');
+}
+
+function statusKey(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'supported')   return 'supports';
+  if (s === 'partial')     return 'partial';
+  if (s === 'unsupported') return 'notsupported';
+  return 'unverifiable';
+}
+function statusLabel(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'supported')   return 'Supports';
+  if (s === 'partial')     return 'Partial support';
+  if (s === 'unsupported') return 'Not supported';
+  return 'Unverifiable';
+}
+
+function trustClass(t) {
+  const v = (t || '').toLowerCase();
+  if (v === 'high')   return 'high';
+  if (v === 'medium') return 'medium';
+  if (v === 'low')    return 'low';
+  return 'unknown';
+}
+function trustLabel(t) {
+  const v = (t || '').toLowerCase();
+  if (v === 'high')   return 'Trusted source';
+  if (v === 'medium') return 'Medium trust';
+  if (v === 'low')    return 'Low trust source';
+  return 'Cannot verify';
+}
+
+// Map (status, trustScore) -> a 0..1 confidence number, since the workflow
+// doesn't return a numeric confidence yet. See README for adding it backend-side.
+function confidenceFor(status, trust) {
+  const s = (status || '').toLowerCase();
+  const t = (trust  || '').toLowerCase();
+  if (s === 'unverifiable') return null;
+  const trustWeight = t === 'high' ? 1.0 : t === 'medium' ? 0.78 : t === 'low' ? 0.6 : 0.7;
+  const base = s === 'supported' ? 0.92
+             : s === 'unsupported' ? 0.88
+             : s === 'partial' ? 0.62
+             : 0.5;
+  return Math.min(0.98, base * trustWeight);
+}
+
+// Display-friendly host
+function shortHost(url) {
+  try { return new URL(url).host.replace(/^www\./, '') + new URL(url).pathname; }
+  catch { return url; }
+}
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ============== Renderers ==============
+
+function setStats(s) {
+  statTotal.textContent = s.total ?? '—';
+  statSup.textContent   = s.supported ?? '—';
+  statPart.textContent  = s.partial ?? '—';
+  statNot.textContent   = s.notSupported ?? '—';
+}
+function clearStats() {
+  setStats({ total: '—', supported: '—', partial: '—', notSupported: '—' });
+}
+
+function renderEmpty() {
+  panelBody.innerHTML = `
+    <div class="state">
+      <h3>Ready when you are.</h3>
+      <p>Paste a Wikipedia article URL or title above, then run verification. Each cited claim will be fetched, checked against its source, and rated.</p>
+    </div>`;
+}
+
+function renderLoading(title) {
+  panelBody.innerHTML = `
+    <div class="state">
+      <div class="spinner"></div>
+      <h3>Verifying citations…</h3>
+      <p>Fetching <em>${escapeHtml(title)}</em>, extracting cited claims, and checking each source. This usually takes 20–90 seconds.</p>
+    </div>`;
+}
+
+function renderError(msg) {
+  panelBody.innerHTML = `
+    <div class="state error">
+      <h3>Couldn't run verification</h3>
+      <p>${escapeHtml(msg)}</p>
+    </div>`;
+}
+
+function renderClaimCard(item, idx) {
+  const sKey = statusKey(item.status);
+  const sLabel = statusLabel(item.status);
+  const tCls = trustClass(item.trustScore);
+  const tLabel = trustLabel(item.trustScore);
+  const conf = confidenceFor(item.status, item.trustScore);
+  const confPct = conf == null ? null : Math.round(conf * 100);
+
+  return `
+    <article class="claim" data-idx="${idx}">
+      <div class="claim-head">
+        <span class="badge ${sKey}">${sLabel}</span>
+        <p class="claim-text">"${escapeHtml(item.claim)}"</p>
+      </div>
+
+      <div class="confidence">
+        <span class="confidence-label">Confidence</span>
+        <div class="bar-track">
+          <div class="bar-fill ${sKey}" style="width: ${confPct == null ? 0 : confPct}%"></div>
+        </div>
+        <span class="confidence-value">${confPct == null ? '—' : confPct + '%'}</span>
+      </div>
+
+      <div class="rationale">${escapeHtml(item.rationale || 'No rationale provided.')}</div>
+
+      <div class="source-row">
+        <a class="source-link" href="${escapeHtml(item.sourceUrl || '#')}" target="_blank" rel="noreferrer noopener">
+          ${escapeHtml(shortHost(item.sourceUrl || ''))}
+        </a>
+        <span class="trust-pill ${tCls}">${tLabel}</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn act-approve" data-act="approve">Approve</button>
+        <button class="btn act-flag"    data-act="flag">Flag for review</button>
+        <a class="btn" href="${escapeHtml(item.sourceUrl || '#')}" target="_blank" rel="noreferrer noopener">View full source</a>
+      </div>
+    </article>`;
+}
+
+function renderReport(report) {
+  const results = report.results || [];
+
+  // Stat strip pulls from the summary the workflow already builds
+  const sum = report.summary || {};
+  setStats({
+    total:        report.totalClaims ?? results.length ?? 0,
+    supported:    sum.supported    ?? 0,
+    partial:      sum.partial      ?? 0,
+    notSupported: sum.unsupported  ?? 0,
+  });
+
+  if (!results.length) {
+    panelBody.innerHTML = `
+      <div class="state">
+        <h3>No verifiable citations found</h3>
+        <p>This article had no inline claims with external <code>&lt;ref&gt;</code> URLs that could be checked. Try another article.</p>
+      </div>`;
+    return;
+  }
+
+  const cards = results.map(renderClaimCard).join('');
+  panelBody.innerHTML = `<div class="claims">${cards}</div>`;
+
+  // Wire up Approve / Flag toggles (local-only state)
+  panelBody.querySelectorAll('.claim').forEach(card => {
+    card.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const act = btn.dataset.act;
+        // Clear other state first
+        card.querySelectorAll('[data-act]').forEach(b => b.classList.remove('approved', 'flagged'));
+        if (act === 'approve') btn.classList.add('approved');
+        if (act === 'flag')    btn.classList.add('flagged');
+      });
+    });
+  });
+}
+
+// ============== Network ==============
+
+async function runVerification() {
+  const webhookUrl = getWebhookUrl();
+  if (!webhookUrl) {
+    renderError('No webhook URL configured. Click "configure webhook endpoint" below to add it.');
+    return;
+  }
+
+  const title = parseTitle(urlInput.value);
+  if (!title) {
+    renderError('Enter a Wikipedia article URL or title first.');
+    return;
+  }
+
+  runBtn.disabled = true;
+  clearStats();
+  renderLoading(title);
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Webhook returned ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // n8n's "Respond to Webhook" sometimes wraps payload in an array — unwrap.
+    const report = Array.isArray(data) ? (data[0]?.json || data[0] || {}) : data;
+
+    if (!report || !report.results) {
+      throw new Error('Unexpected response shape — make sure Build Report is the last node returned.');
+    }
+
+    renderReport(report);
+  } catch (err) {
+    console.error(err);
+    let msg = err.message || 'Unknown error.';
+    // CORS / network failures usually show as "Failed to fetch"
+    if (/failed to fetch/i.test(msg)) {
+      msg = 'Network or CORS error. Make sure the webhook responds with the right CORS headers (see the README).';
+    }
+    renderError(msg);
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+// ============== Wire-up ==============
+
+runBtn.addEventListener('click', runVerification);
+urlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runVerification();
+});
+
+// Settings modal
+const modal       = $('modalBackdrop');
+const webhookFld  = $('webhookField');
+$('configLink').addEventListener('click', () => {
+  webhookFld.value = getWebhookUrl();
+  modal.classList.add('show');
+  setTimeout(() => webhookFld.focus(), 50);
+});
+$('cancelCfg').addEventListener('click', () => modal.classList.remove('show'));
+$('saveCfg').addEventListener('click', () => {
+  setWebhookUrl(webhookFld.value.trim());
+  modal.classList.remove('show');
+});
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+
+// Default value to make demoing easy
+urlInput.value = 'en.wikipedia.org/wiki/CRISPR';
+</script>
+
+</body>
+</html>
