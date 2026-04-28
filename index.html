@@ -558,7 +558,7 @@ const STORAGE_KEY = 'wikiverify.webhookUrl';
 // ============== Config ==============
 // Edit this default if you want to ship the URL with the code.
 // Otherwise users set it via the "configure webhook endpoint" link.
-const DEFAULT_WEBHOOK_URL = '';
+const DEFAULT_WEBHOOK_URL = 'https://n8n.ctc.uic.edu/webhook/verify-article';
 
 function getWebhookUrl() {
   return localStorage.getItem(STORAGE_KEY) || DEFAULT_WEBHOOK_URL;
