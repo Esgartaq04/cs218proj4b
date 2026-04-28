@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WikiVerify — citation verification for Wikipedia</title>
+<title>WikiLens — citation verification for Wikipedia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* =========================================================
-     WikiVerify — design tokens
+     WikiLens — design tokens
      ========================================================= */
   :root {
     --bg:            #F7F5F0;
@@ -490,7 +490,7 @@
   <!-- ============== Header ============== -->
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">WikiVerify<span class="dot">.</span></span>
+      <span class="brand-mark">WikiLens<span class="dot">.</span></span>
     </div>
     <span class="tagline">trust, but cite</span>
   </header>
@@ -499,7 +499,7 @@
   <section class="panel">
     <div class="panel-head">
       <div class="left">
-        <span class="label">WikiVerify</span>
+        <span class="label">WikiLens</span>
         <input
           id="urlInput"
           class="url-input"
@@ -548,12 +548,12 @@
 
 <script>
 /* =========================================================
-   WikiVerify frontend
+   WikiLens frontend
    - Calls the n8n /webhook/verify-article endpoint
    - Renders the structured report from the Build Report node
    ========================================================= */
 
-const STORAGE_KEY = 'wikiverify.webhookUrl';
+const STORAGE_KEY = 'wikilens.webhookUrl';
 
 // ============== Config ==============
 // Edit this default if you want to ship the URL with the code.
